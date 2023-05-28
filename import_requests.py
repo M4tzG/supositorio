@@ -7,6 +7,8 @@ import datetime
 import pytz
 
 folder_path = 'K:\\spirit_data\\'
+DELAY_PER_CAP = 2
+DELAY_PER_PAGE = 2
 
 
 def get_pages_amount(url):
@@ -85,7 +87,7 @@ def grab_and_concat(urls):
             print(f"Failed grabbing {done + 1} / {len(urls)} | Errors: {errors}")
             print(f"Ocorreu um erro: {e}")
             continue
-        time.sleep(5)
+        time.sleep(DELAY_PER_CAP)
     
     return concated.join(grabbed)
 
@@ -189,7 +191,7 @@ def extrair_links_pagina(url, div_id):
 
 # print(grab_and_concat(["https://www.spiritfanfiction.com/historia/a-conquista-do-trono-5340076/capitulos/8399828"]))
 div_id = "meio"
-num_pag = 1
+num_pag = (9)
 total_pages = get_pages_amount("https://www.spiritfanfiction.com/recentes")
 from_ = 1
 to_ = round(total_pages/2)
@@ -218,7 +220,7 @@ for i in range(from_, to_):
             print("\n\n------------\n\n")
 
             current = current + 1
-            time.sleep(6)
+            time.sleep(DELAY_PER_PAGE)
     num_pag += 1
 
 write_to_json(
