@@ -43,11 +43,23 @@ def grab_and_concat(urls):
             cap_content = box_div[1].find('div', class_="texto-capitulo")
 
             author_notes = cap_content.find('div', class_="texto-capitulo-notas")
+            author_notes_h2 = cap_content.find_all('h2')
             picture = cap_content.find('div', class_="text-center")
             hasNotes = True if author_notes else False
             hasPicture = True if picture else False
             index_title = 1 if hasNotes else 0
             index_text = 2 if hasNotes else 1
+            if(len(author_notes) == 2):
+                index_title = 1
+            elif(author_notes_h2):
+                if(len(author_notes_h2) > 0):
+                        if(author_notes_h2[0].text == 'Notas do Autor'):
+                            index_title = 1
+                        elif(author_notes[0].text == 'Notas Finais'):
+                            index_title = 0
+                        else:
+                            index_title = 0
+            
             if(not hasNotes and not hasPicture):
                 index_text = 0
             elif(not hasNotes or not hasPicture):
