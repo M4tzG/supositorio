@@ -196,35 +196,35 @@ to_ = round(total_pages/2)
 print(to_)
 # to_ = round(total_pages - (total_pages / 2))
 
-# for i in range(from_, to_):
-#     if num_pag == 1:
-#         url = f"https://www.spiritfanfiction.com/recentes"
-#     else:
-#         url = f"https://www.spiritfanfiction.com/recentes?pagina={num_pag}"
+for i in range(from_, to_):
+    if num_pag == 1:
+        url = f"https://www.spiritfanfiction.com/recentes"
+    else:
+        url = f"https://www.spiritfanfiction.com/recentes?pagina={num_pag}"
 
-#     links = extrair_links_pagina(url, div_id)
-#     if links:
-#         current = 1
-#         print(f"Links extraídos da página em {url}, dentro da div com ID '{div_id}', na pag{num_pag}:")
-#         for link in links:
-#             print("\n------------\n")
-#             print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
+    links = extrair_links_pagina(url, div_id)
+    if links:
+        current = 1
+        print(f"Links extraídos da página em {url}, dentro da div com ID '{div_id}', na pag{num_pag}:")
+        for link in links:
+            print("\n------------\n")
+            print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
 
-#             write_to_json(
-#             extract_fic_info(link), 
-#             folder_path, 
-#             f"pag[{num_pag}]_story[{current}]_fanfic.json")
+            write_to_json(
+            extract_fic_info(link), 
+            folder_path, 
+            f"pag[{num_pag}]_story[{current}]_fanfic.json")
 
-#             print("\n\n------------\n\n")
+            print("\n\n------------\n\n")
 
-#             current = current + 1
-#             time.sleep(6)
-#     num_pag += 1
+            current = current + 1
+            time.sleep(6)
+    num_pag += 1
 
-# write_to_json(
-#     extract_fic_info("https://www.spiritfanfiction.com/historia/brands-of-tomorrow-24538184"), 
-#     folder_path, 
-#     'file_name2.json')
+write_to_json(
+    extract_fic_info("https://www.spiritfanfiction.com/historia/brands-of-tomorrow-24538184"), 
+    folder_path, 
+    'file_name2.json')
 
 # https://www.spiritfanfiction.com/historia/um-amor-proibido-toshiruz-x-mei-ling-24887152
 meta = {
@@ -238,4 +238,4 @@ meta = {
 # print(extract_fic_info("https://www.spiritfanfiction.com/historia/complicated-24741568"))
 # print(parse_metadata(meta["metadata"]))
 
-print(grab_and_concat(["https://www.spiritfanfiction.com/historia/as-presas-do-submundo-jinx-x-you-24447852/capitulos/24447860"]))
+# print(grab_and_concat(["https://www.spiritfanfiction.com/historia/as-presas-do-submundo-jinx-x-you-24447852/capitulos/24447860"]))
