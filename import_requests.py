@@ -49,13 +49,16 @@ def grab_and_concat(urls):
             hasPicture = True if picture else False
             index_title = 1 if hasNotes else 0
             index_text = 2 if hasNotes else 1
-            if(len(author_notes) == 2):
+            # print('NOTAS: ', author_notes, 'H2S: ', author_notes_h2)
+            if not author_notes:
+                index_title = 0
+            elif(len(author_notes) == 2):
                 index_title = 1
             elif(author_notes_h2):
                 if(len(author_notes_h2) > 0):
-                        if(author_notes_h2[0].text == 'Notas do Autor'):
+                        if(author_notes and author_notes_h2[0].text == 'Notas do Autor'):
                             index_title = 1
-                        elif(author_notes[0].text == 'Notas Finais'):
+                        elif(author_notes and author_notes_h2[0].text == 'Notas Finais'):
                             index_title = 0
                         else:
                             index_title = 0
@@ -81,6 +84,7 @@ def grab_and_concat(urls):
             errors = errors + 1
             print(f"Failed grabbing {done + 1} / {len(urls)} | Errors: {errors}")
             print(f"Ocorreu um erro: {e}")
+            continue
         time.sleep(5)
     
     return concated.join(grabbed)
@@ -192,30 +196,30 @@ to_ = round(total_pages/2)
 print(to_)
 # to_ = round(total_pages - (total_pages / 2))
 
-for i in range(from_, to_):
-    if num_pag == 1:
-        url = f"https://www.spiritfanfiction.com/recentes"
-    else:
-        url = f"https://www.spiritfanfiction.com/recentes?pagina={num_pag}"
+# for i in range(from_, to_):
+#     if num_pag == 1:
+#         url = f"https://www.spiritfanfiction.com/recentes"
+#     else:
+#         url = f"https://www.spiritfanfiction.com/recentes?pagina={num_pag}"
 
-    links = extrair_links_pagina(url, div_id)
-    if links:
-        current = 1
-        print(f"Links extraídos da página em {url}, dentro da div com ID '{div_id}', na pag{num_pag}:")
-        for link in links:
-            print("\n------------\n")
-            print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
+#     links = extrair_links_pagina(url, div_id)
+#     if links:
+#         current = 1
+#         print(f"Links extraídos da página em {url}, dentro da div com ID '{div_id}', na pag{num_pag}:")
+#         for link in links:
+#             print("\n------------\n")
+#             print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
 
-            write_to_json(
-            extract_fic_info(link), 
-            folder_path, 
-            f"pag[{num_pag}]_story[{current}]_fanfic.json")
+#             write_to_json(
+#             extract_fic_info(link), 
+#             folder_path, 
+#             f"pag[{num_pag}]_story[{current}]_fanfic.json")
 
-            print("\n\n------------\n\n")
+#             print("\n\n------------\n\n")
 
-            current = current + 1
-            time.sleep(6)
-    num_pag += 1
+#             current = current + 1
+#             time.sleep(6)
+#     num_pag += 1
 
 # write_to_json(
 #     extract_fic_info("https://www.spiritfanfiction.com/historia/brands-of-tomorrow-24538184"), 
@@ -234,4 +238,4 @@ meta = {
 # print(extract_fic_info("https://www.spiritfanfiction.com/historia/complicated-24741568"))
 # print(parse_metadata(meta["metadata"]))
 
-# print(grab_and_concat(["https://www.spiritfanfiction.com/historia/obsolete-fate-24219593/capitulos/24371020"]))
+print(grab_and_concat(["https://www.spiritfanfiction.com/historia/as-presas-do-submundo-jinx-x-you-24447852/capitulos/24447860"]))
