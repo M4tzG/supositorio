@@ -5,27 +5,33 @@ import json
 import os
 import datetime
 import pytz
+from dot_env_control import *
+from utils import *
 
-folder_path = 'K:\\spirit_data\\'
-DELAY_PER_CAP = 2
-DELAY_PER_PAGE = 2
+# create a .env file with the following structure:
+# FOLDER_PATH=K:\\spirit_data_older\\
+# FROM_=124293
+# TO_=62216
+# DELAY_PER_CAP=4.5
+# DELAY_PER_PAGE=4.5
+# PAGE_NUM=124293
+# FINAL_PAGE=-1
+# LAST_PAGE_STOPPED_AT=-1
+# LAST_PAGE=-1
 
+DOT_ENV_PATH = '.env'
+ENV = read_env_file(DOT_ENV_PATH)
 
-def get_pages_amount(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+FOLDER_PATH = ENV['FOLDER_PATH']
+FROM_ = int(ENV['FROM_'])
+TO_ = int(ENV['TO_'])
+DELAY_PER_CAP =  float(ENV['DELAY_PER_CAP'])
+DELAY_PER_PAGE = float(ENV['DELAY_PER_CAP'])
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        div = soup.find('div', class_='numeros')
-        a = div.find_all('a')
-        number = int(a[len(a) -1].text)
+num_pag = FROM_
+total_pages = get_pages_amount("https://www.spiritfanfiction.com/recentes")
+update_env_file(DOT_ENV_PATH, {'LAST_PAGE': str(total_pages)})
 
-        return number
-
-    except requests.exceptions.RequestException as e:
-        print(f"Ocorreu um erro: {e}")
-        return 0
 
 def grab_and_concat(urls):
     grabbed = []
@@ -52,8 +58,10 @@ def grab_and_concat(urls):
             index_title = 1 if hasNotes else 0
             index_text = 2 if hasNotes else 1
             # print('NOTAS: ', author_notes, 'H2S: ', author_notes_h2)
-            if not author_notes:
-                index_title = 0
+            if not author_notes_h2 or not author_notes:
+                print(author_notes)
+                print(f"URL: {url} was skipped, possibily had no content.")
+                return None
             elif(len(author_notes) == 2):
                 index_title = 1
             elif(author_notes_h2):
@@ -92,6 +100,8 @@ def grab_and_concat(urls):
     return concated.join(grabbed)
 
 def write_to_json(dictionary, relative_path, file_name):
+    if dictionary == None:
+        return None
     if not os.path.exists(relative_path):
         os.makedirs(relative_path)
 
@@ -155,6 +165,12 @@ def extract_fic_info(url):
             a = tr.find("a")
             cap_links.append(a.get("href"))
         
+        story = ''
+        story = grab_and_concat(cap_links)
+        if story == None:
+            return None
+
+        
         data = {
             "downloaded_in": str(datetime.datetime.now(pytz.timezone('America/New_York'))),
             "url": url,
@@ -191,14 +207,10 @@ def extrair_links_pagina(url, div_id):
 
 # print(grab_and_concat(["https://www.spiritfanfiction.com/historia/a-conquista-do-trono-5340076/capitulos/8399828"]))
 div_id = "meio"
-num_pag = (9)
-total_pages = get_pages_amount("https://www.spiritfanfiction.com/recentes")
-from_ = 1
-to_ = round(total_pages/2)
-print(to_)
+
 # to_ = round(total_pages - (total_pages / 2))
 
-for i in range(from_, to_):
+for i in range(FROM_, TO_, -1):
     if num_pag == 1:
         url = f"https://www.spiritfanfiction.com/recentes"
     else:
@@ -214,19 +226,20 @@ for i in range(from_, to_):
 
             write_to_json(
             extract_fic_info(link), 
-            folder_path, 
+            FOLDER_PATH, 
             f"pag[{num_pag}]_story[{current}]_fanfic.json")
 
             print("\n\n------------\n\n")
 
             current = current + 1
             time.sleep(DELAY_PER_PAGE)
-    num_pag += 1
+    update_env_file(DOT_ENV_PATH, {'LAST_PAGE_STOPPED_AT': str(num_pag)})
+    num_pag -= 1
 
-write_to_json(
-    extract_fic_info("https://www.spiritfanfiction.com/historia/brands-of-tomorrow-24538184"), 
-    folder_path, 
-    'file_name2.json')
+# write_to_json(
+#     extract_fic_info("https://www.spiritfanfiction.com/historia/brands-of-tomorrow-24538184"), 
+#     FOLDER_PATH, 
+#     'file_name2.json')
 
 # https://www.spiritfanfiction.com/historia/um-amor-proibido-toshiruz-x-mei-ling-24887152
 meta = {
