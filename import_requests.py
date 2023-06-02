@@ -223,9 +223,12 @@ for i in range(FROM_, TO_, -1):
         for link in links:
             print("\n------------\n")
             print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
+            content = extract_fic_info(link)
+            if content == None:
+                continue
 
             write_to_json(
-            extract_fic_info(link), 
+            content, 
             FOLDER_PATH, 
             f"pag[{num_pag}]_story[{current}]_fanfic.json")
 
