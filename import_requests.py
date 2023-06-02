@@ -31,6 +31,7 @@ DELAY_PER_PAGE = float(ENV['DELAY_PER_CAP'])
 num_pag = FROM_
 total_pages = get_pages_amount("https://www.spiritfanfiction.com/recentes")
 update_env_file(DOT_ENV_PATH, {'LAST_PAGE': str(total_pages)})
+update_env_file(DOT_ENV_PATH, {'OLD_FROM_': str(FROM_)})
 
 
 def grab_and_concat(urls):
@@ -58,10 +59,12 @@ def grab_and_concat(urls):
             index_title = 1 if hasNotes else 0
             index_text = 2 if hasNotes else 1
             # print('NOTAS: ', author_notes, 'H2S: ', author_notes_h2)
-            if not author_notes_h2 or not author_notes:
+            if not author_notes_h2:
                 print(author_notes)
                 print(f"URL: {url} was skipped, possibily had no content.")
                 return None
+            if(not author_notes):
+                index_title = 0
             elif(len(author_notes) == 2):
                 index_title = 1
             elif(author_notes_h2):
@@ -169,7 +172,6 @@ def extract_fic_info(url):
         story = grab_and_concat(cap_links)
         if story == None:
             return None
-
         
         data = {
             "downloaded_in": str(datetime.datetime.now(pytz.timezone('America/New_York'))),
@@ -178,7 +180,7 @@ def extract_fic_info(url):
             "synopsis": synopsis, 
             "metadata": parse_metadata(metadata),
             "chapter_urls": cap_links,
-            "history": grab_and_concat(cap_links)
+            "history": story
         }
     
         return data
@@ -224,19 +226,18 @@ for i in range(FROM_, TO_, -1):
             print("\n------------\n")
             print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
             content = extract_fic_info(link)
-            if content == None:
-                continue
-
-            write_to_json(
-            content, 
-            FOLDER_PATH, 
-            f"pag[{num_pag}]_story[{current}]_fanfic.json")
+            if not (content == None):
+                write_to_json(
+                content, 
+                FOLDER_PATH, 
+                f"pag[{num_pag}]_story[{current}]_fanfic.json")
 
             print("\n\n------------\n\n")
 
             current = current + 1
             time.sleep(DELAY_PER_PAGE)
     update_env_file(DOT_ENV_PATH, {'LAST_PAGE_STOPPED_AT': str(num_pag)})
+    update_env_file(DOT_ENV_PATH, {'FROM_': str(num_pag)})
     num_pag -= 1
 
 # write_to_json(
