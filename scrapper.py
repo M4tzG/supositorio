@@ -9,7 +9,8 @@ from dot_env_control import *
 from utils import *
 
 # create a .env file with the following structure:
-# FOLDER_PATH=K:\\spirit_data_older\\
+# FOLDER_PATH=C:\\scrapper\\data
+# LOG_PATH=C:\\scrapper\\logs
 # FROM_=124293
 # TO_=62216
 # DELAY_PER_CAP=4.5
@@ -23,6 +24,7 @@ DOT_ENV_PATH = '.env'
 ENV = read_env_file(DOT_ENV_PATH)
 
 FOLDER_PATH = ENV['FOLDER_PATH']
+LOG_PATH = ENV['LOG_PATH']
 FROM_ = int(ENV['FROM_'])
 TO_ = int(ENV['TO_'])
 DELAY_PER_CAP =  float(ENV['DELAY_PER_CAP'])
@@ -32,6 +34,28 @@ num_pag = FROM_
 total_pages = get_pages_amount("https://www.spiritfanfiction.com/recentes")
 update_env_file(DOT_ENV_PATH, {'LAST_PAGE': str(total_pages)})
 update_env_file(DOT_ENV_PATH, {'OLD_FROM_': str(FROM_)})
+div_id = "meio"
+
+def get_pages_amount(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+        div = soup.find('div', class_='numeros')
+        a = div.find_all('a')
+        number = int(a[len(a) -1].text)
+
+        return number
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ocorreu um erro: {e}")
+        return 0
+    
+def pega_texto(cap_content):
+    texto_inteiro = ""
+    texto_inteiro += cap_content.get_text()
+    return texto_inteiro
 
 
 def grab_and_concat(urls):
@@ -40,6 +64,7 @@ def grab_and_concat(urls):
     done = 0
     errors = 0
     for url in urls:
+
         print(f"Reading URL: {url} |")
         try:
             response = requests.get(url)
@@ -58,12 +83,8 @@ def grab_and_concat(urls):
             hasPicture = True if picture else False
             index_title = 1 if hasNotes else 0
             index_text = 2 if hasNotes else 1
-            # print('NOTAS: ', author_notes, 'H2S: ', author_notes_h2)
-            if not author_notes_h2:
-                print(author_notes)
-                print(f"URL: {url} was skipped, possibily had no content.")
-                return None
-            if(not author_notes):
+
+            if not author_notes:
                 index_title = 0
             elif(len(author_notes) == 2):
                 index_title = 1
@@ -83,13 +104,10 @@ def grab_and_concat(urls):
             else:
                 index_text = 2
 
-            # print('HERE: ', cap_content.find_all('h2')[1], cap_content.find_all('div')[2])
-            # print(hasNotes, hasPicture, index_title, index_text)
             cap_title = cap_content.find_all('h2')[index_title].text
-            cap_text = cap_content.find_all('div')[index_text].text
-            data = f"{cap_title}\n{cap_text}"
+            cap_text = pega_texto(cap_content)
+            data = f"{cap_text}"
             grabbed.append(data)
-
             done = done + 1
             print(f"Successfully grabbed '{cap_title}' | {done} / {len(urls)} [{done / len(urls) * 100}%] | Errors: {errors}")
 
@@ -103,8 +121,6 @@ def grab_and_concat(urls):
     return concated.join(grabbed)
 
 def write_to_json(dictionary, relative_path, file_name):
-    if dictionary == None:
-        return None
     if not os.path.exists(relative_path):
         os.makedirs(relative_path)
 
@@ -113,6 +129,24 @@ def write_to_json(dictionary, relative_path, file_name):
     with open(file_path, 'w') as file:
         json.dump(dictionary, file)
 
+def save_md(md, md_parsed, relative_path, file_name, fname):
+    log_at = f"---LOG START: {datetime.datetime.now()}---"
+    log_url = f"---URL: {url}---"
+    log_fname = f"---FILENAME: {fname}---"
+    md_start = f"---METADATA START---"
+    md_mid = f"---METADATA PARSED---"
+    md_end = f"---METADATA END---"
+    log_end = f"---LOG END: {datetime.datetime.now()}---"
+    full_str = f"{log_at}\n{log_url}\n{log_fname}\n{md_start}{md}{md_mid}\n{md_parsed}\n{md_end}\n{log_end}\n\n"
+
+    if not os.path.exists(relative_path):
+        os.makedirs(relative_path)
+
+    file_path = os.path.join(relative_path, file_name+".pprt")
+    with open(file_path, 'a') as file:
+        file.write(full_str)
+
+    
 
 def parse_metadata(raw):
     to_remove = [
@@ -145,7 +179,7 @@ def parse_metadata(raw):
     return result
 
 
-def extract_fic_info(url):
+def extract_fic_info(url, fname):
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -159,7 +193,9 @@ def extract_fic_info(url):
         title = box_div[1].find('h1', class_="tituloPrincipal").text
         info = box_div[1].find_all('div')
         synopsis = info[3].text
-        metadata = info[4].text
+        metadata = box_div[1].find('div', class_="texto espacamentoTop").get_text()
+        save_md(metadata, parse_metadata(metadata), LOG_PATH,
+        "mdlog" + f'{datetime.datetime.today().strftime("%m%d%Y")}', fname)
 
         table = box.find("table", class_="listagemCapitulos")
         caps = table.find_all("tr", class_="listagem-textoBg1")
@@ -168,11 +204,6 @@ def extract_fic_info(url):
             a = tr.find("a")
             cap_links.append(a.get("href"))
         
-        story = ''
-        story = grab_and_concat(cap_links)
-        if story == None:
-            return None
-        
         data = {
             "downloaded_in": str(datetime.datetime.now(pytz.timezone('America/New_York'))),
             "url": url,
@@ -180,7 +211,7 @@ def extract_fic_info(url):
             "synopsis": synopsis, 
             "metadata": parse_metadata(metadata),
             "chapter_urls": cap_links,
-            "history": story
+            "history": grab_and_concat(cap_links)
         }
     
         return data
@@ -207,11 +238,6 @@ def extrair_links_pagina(url, div_id):
     except requests.exceptions.RequestException as e:
         print(f"Ocorreu um erro: {e}")
 
-# print(grab_and_concat(["https://www.spiritfanfiction.com/historia/a-conquista-do-trono-5340076/capitulos/8399828"]))
-div_id = "meio"
-
-# to_ = round(total_pages - (total_pages / 2))
-
 for i in range(FROM_, TO_, -1):
     if num_pag == 1:
         url = f"https://www.spiritfanfiction.com/recentes"
@@ -225,12 +251,15 @@ for i in range(FROM_, TO_, -1):
         for link in links:
             print("\n------------\n")
             print(f"[ pag[{num_pag}]_story[{current}]_fanfic.json ] : \n")
-            content = extract_fic_info(link)
+
+            fname = f"pag[{num_pag}]_story[{current}]_fanfic.json"
+            content = extract_fic_info(link, fname)
+
             if not (content == None):
                 write_to_json(
-                content, 
+                content,
                 FOLDER_PATH, 
-                f"pag[{num_pag}]_story[{current}]_fanfic.json")
+                fname)
 
             print("\n\n------------\n\n")
 
