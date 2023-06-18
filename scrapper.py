@@ -192,7 +192,8 @@ def extract_fic_info(url, fname):
         box_div = box.find_all('div')
         title = box_div[1].find('h1', class_="tituloPrincipal").text
         info = box_div[1].find_all('div')
-        synopsis = info[3].text
+        # synopsis = info[3].text
+        synopsis = box.find('div', class_="texto").text
         metadata = box_div[1].find('div', class_="texto espacamentoTop").get_text()
         save_md(metadata, parse_metadata(metadata), LOG_PATH,
         "mdlog" + f'{datetime.datetime.today().strftime("%m%d%Y")}', fname)
